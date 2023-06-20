@@ -16,4 +16,17 @@ class AppTest extends Specification {
         then:
         result != null
     }
+
+    def "should print correct greeting"() {
+        given:
+        def outputStream = new ByteArrayOutputStream()
+        System.setOut(new PrintStream(outputStream))
+
+        when:
+        App.main(new String[0])
+
+        then:
+        String output = outputStream.toString().trim()
+        output == "Hello World!"
+    }
 }
