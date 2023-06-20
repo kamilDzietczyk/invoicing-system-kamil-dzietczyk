@@ -3,13 +3,49 @@
  */
 package pl.futurecollars.invoicing
 
-import pl.futurecollars.invoicing.model.Vat
 import spock.lang.Specification
 
 class AppTest extends Specification {
+    def "application has a greeting"() {
+        setup:
+        def app = new App()
+
+        when:
+        def result = app.greeting
+
+        then:
+        result != null
+    }
+
+    def "should print correct greeting"() {
+        given:
+        def outputStream = new ByteArrayOutputStream()
+        System.setOut(new PrintStream(outputStream))
+
+        when:
+        App.main(new String[0])
+
+        then:
+        String output = outputStream.toString().trim()
+        output == "Hello World!"
+    }
+
+    def "should print correct greeting"() {
+        given:
+        def outputStream = new ByteArrayOutputStream()
+        System.setOut(new PrintStream(outputStream))
+
+        when:
+        App.main(new String[0])
+
+        then:
+        String output = outputStream.toString().trim()
+        output == "Hello World!"
+    }
+
     def "Test enum values"() {
         when:
-        def vatValues = Vat.values();
+        def vatValues = Vat.values()
 
         then:
         vatValues.size() == 6
@@ -25,31 +61,5 @@ class AppTest extends Specification {
         vatValues[4].rate == BigDecimal.valueOf(0)
         vatValues[5].name() == "Vat_ZW"
         vatValues[5].rate == BigDecimal.valueOf(0)
-    }
-
-    def "should print correct greeting"() {
-        given:
-        def outputStream = new ByteArrayOutputStream()
-        System.setOut(new PrintStream(outputStream))
-
-        when:
-        App.main(new String[0])
-
-        then:
-        String output = outputStream.toString().trim()
-        output == "Hello World!"
-    }
-
-    def "should print correct greeting"() {
-        given:
-        def outputStream = new ByteArrayOutputStream()
-        System.setOut(new PrintStream(outputStream))
-
-        when:
-        App.main(new String[0])
-
-        then:
-        String output = outputStream.toString().trim()
-        output == "Hello World!"
     }
 }
