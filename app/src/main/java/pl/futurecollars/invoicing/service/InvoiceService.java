@@ -11,7 +11,6 @@ import pl.futurecollars.invoicing.model.Invoice;
 @Service
 @AllArgsConstructor
 public class InvoiceService {
-
   private final Database database;
 
   public Optional<Invoice> getById(int id) throws IOException {
