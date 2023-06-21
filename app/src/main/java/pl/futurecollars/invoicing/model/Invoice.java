@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Invoice {
-
   private int id;
   private LocalDate date;
   private Company seller;
