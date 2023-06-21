@@ -6,7 +6,6 @@ import lombok.Data;
 
 @Data
 public class Invoice {
-
   private int id;
   private LocalDate date;
   private Company seller;
