@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class ActualId {
+
   private int id;
 
   public ActualId(int id) {
