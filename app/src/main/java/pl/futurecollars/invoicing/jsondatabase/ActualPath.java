@@ -2,8 +2,8 @@ package pl.futurecollars.invoicing.jsondatabase;
 
 public class ActualPath {
 
-  private String idPath = "https://github.com/kamilDzietczyk/invoicing-system-kamil-dzietczyk/blob/b9dc3861c50efd1016bbe8de041164cdc8dd6a5d/id.json";
-  private String databasePath = "https://github.com/kamilDzietczyk/invoicing-system-kamil-dzietczyk/blob/b9dc3861c50efd1016bbe8de041164cdc8dd6a5d/databasefile.json";
+  private String idPath = "///home/runner/work/invoicing-system-kamil-dzietczyk/invoicing-system-kamil-dzietczyk/id.json";
+  private String databasePath = "///home/runner/work/invoicing-system-kamil-dzietczyk/invoicing-system-kamil-dzietczyk/databasefile.json";
 
   public String getIdPath(String name) {
 
