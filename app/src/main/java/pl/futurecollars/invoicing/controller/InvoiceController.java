@@ -20,6 +20,7 @@ import pl.futurecollars.invoicing.model.Invoice;
 @RestController
 @RequestMapping("invoice")
 public class InvoiceController {
+
   private final InMemoryDatabase inMemoryDatabase;
   private final JsonDatabase jsonDatabase;
 
