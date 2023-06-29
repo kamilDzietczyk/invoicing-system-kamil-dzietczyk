@@ -16,18 +16,16 @@ import org.springframework.web.bind.annotation.RestController;
 import pl.futurecollars.invoicing.db.memory.InMemoryDatabase;
 import pl.futurecollars.invoicing.jsondatabase.JsonDatabase;
 import pl.futurecollars.invoicing.model.Invoice;
-import pl.futurecollars.invoicing.service.InvoiceService;
 
 @RestController
 @RequestMapping("invoice")
 public class InvoiceController {
-
-  private final InvoiceService inMemoryDatabase;
-  private final InvoiceService jsonDatabase;
+  private final InMemoryDatabase inMemoryDatabase;
+  private final JsonDatabase jsonDatabase;
 
   public InvoiceController() {
-    this.inMemoryDatabase = new InvoiceService(new InMemoryDatabase());
-    this.jsonDatabase = new InvoiceService(new JsonDatabase());
+    this.inMemoryDatabase = new InMemoryDatabase();
+    this.jsonDatabase = new JsonDatabase();
   }
 
   @GetMapping("/Memory")
@@ -43,7 +41,7 @@ public class InvoiceController {
   }
 
   @GetMapping("/Memory/{id}")
-  public ResponseEntity<Invoice> getInvoiceByIdMemory(@PathVariable("id") int id) throws IOException {
+  public ResponseEntity<Invoice> getInvoiceByIdMemory(@PathVariable("id") int id) {
     Optional<Invoice> invoice = inMemoryDatabase.getById(id);
     return invoice.map(ResponseEntity::ok)
         .orElse(ResponseEntity.notFound().build());
@@ -57,7 +55,7 @@ public class InvoiceController {
   }
 
   @PostMapping("/Memory/add")
-  public ResponseEntity<Integer> addInvoiceMemory(@RequestBody Invoice invoice) throws IOException {
+  public ResponseEntity<Integer> addInvoiceMemory(@RequestBody Invoice invoice) {
     int id = inMemoryDatabase.save(invoice);
     return ResponseEntity.status(HttpStatus.CREATED).body(id);
   }
