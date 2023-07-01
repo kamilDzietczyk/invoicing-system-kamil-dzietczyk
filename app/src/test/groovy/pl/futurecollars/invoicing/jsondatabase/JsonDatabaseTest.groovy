@@ -17,8 +17,8 @@ class JsonDatabaseTest extends Specification{
     private static JsonService jsonService;
     private static JsonDatabase jsonDatabase;
     private static File file;
+    private static File fileid;
     private static Vat vat;
-    private static GetActualId getActualId1;
 
     def setupSpec() {
         actualPath = new ActualPath();
@@ -27,6 +27,7 @@ class JsonDatabaseTest extends Specification{
         jsonService = new JsonService();
         jsonDatabase = new JsonDatabase();
         file = new File(actualPath.getIdPath("database"));
+        fileid = new File(actualPath.getIdPath("id"));
         vat = Vat.Vat_7
         getActualId = new GetActualId();
     }
@@ -44,8 +45,8 @@ class JsonDatabaseTest extends Specification{
         then:
         file.length()!= 0;
         cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
+        // nadpisanie pliku
+        new FileOutputStream(file).close();
     }
 
     def "Should get by ID"() {
@@ -63,8 +64,8 @@ class JsonDatabaseTest extends Specification{
         then:
         invoice2.get().getBuyer().getTaskIdentificationNumber() =="123456789";
         cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
+        /// wyczyszczenie pliku
+        new FileOutputStream(file).close();
     }
 
     def "Should throw error when try get by invalid Id"() {
@@ -85,8 +86,8 @@ class JsonDatabaseTest extends Specification{
         exception.message.contains("Nie znaleziono faktury o podanym ID: " + (getActualId.getId() + 1))
 
         cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
+        // wyczyszczenie pliku
+        new FileOutputStream(file).close();
     }
 
     def "Should get all Invoice"() {
@@ -113,8 +114,8 @@ class JsonDatabaseTest extends Specification{
         then:
         invoices.size() ==2;
         cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
+        // wyczyszczenie pliku
+        new FileOutputStream(file).close();
     }
 
     def "Should update Invoice"() {
@@ -142,8 +143,8 @@ class JsonDatabaseTest extends Specification{
         inv.get().getBuyer().getTaskIdentificationNumber() == "000000"
 
         cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
+        // wyczyszczenie pliku
+        new FileOutputStream(file).close();
     }
 
     def "Should throw exception when try update invalid invoice"() {
@@ -171,8 +172,8 @@ class JsonDatabaseTest extends Specification{
         exception.message.contains("Nie znaleziono faktury o podanym ID: " + (getActualId.getId() + 2))
 
         cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
+        // wyczyszczenie pliku
+        new FileOutputStream(file).close();
     }
 
     def "Should delete Invoice"() {
@@ -200,8 +201,8 @@ class JsonDatabaseTest extends Specification{
         tempInv.size()==1
 
         cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
+        // wyczyszczenie pliku
+        new FileOutputStream(file).close();
     }
 
     def "Should throw error when try delete not exists Invoice"() {
@@ -229,7 +230,7 @@ class JsonDatabaseTest extends Specification{
         exception.message.contains("Nie znaleziono faktury o podanym ID: " + (getActualId.getId() + 123))
 
         cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
+        // wyczyszczenie pliku
+        new FileOutputStream(file).close();
     }
 }
