@@ -1,13 +1,17 @@
-package pl.futurecollars.invoicing.jsondatabase;
+package pl.futurecollars.invoicing.db.jsondatabase;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Repository;
 import pl.futurecollars.invoicing.db.Database;
 import pl.futurecollars.invoicing.model.Invoice;
 
+@Repository
+@Primary
 public class JsonDatabase implements Database {
 
   private ActualPath actualPath = new ActualPath();

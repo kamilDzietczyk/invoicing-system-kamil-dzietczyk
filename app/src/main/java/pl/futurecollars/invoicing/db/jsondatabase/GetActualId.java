@@ -1,4 +1,4 @@
-package pl.futurecollars.invoicing.jsondatabase;
+package pl.futurecollars.invoicing.db.jsondatabase;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;

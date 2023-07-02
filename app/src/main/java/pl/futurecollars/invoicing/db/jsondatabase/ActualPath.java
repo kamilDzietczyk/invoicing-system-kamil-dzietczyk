@@ -1,4 +1,4 @@
-package pl.futurecollars.invoicing.jsondatabase;
+package pl.futurecollars.invoicing.db.jsondatabase;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

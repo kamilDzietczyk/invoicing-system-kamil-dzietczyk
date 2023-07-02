@@ -1,4 +1,4 @@
-package pl.futurecollars.invoicing.jsondatabase;
+package pl.futurecollars.invoicing.db.jsondatabase;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
