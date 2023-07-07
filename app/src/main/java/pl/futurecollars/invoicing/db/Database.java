@@ -1,17 +1,19 @@
 package pl.futurecollars.invoicing.db;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import pl.futurecollars.invoicing.model.Invoice;
 
 public interface Database {
-  int save(Invoice invoice);
 
-  Optional<Invoice> getById(int id);
+  int save(Invoice invoice) throws IOException;
 
-  List<Invoice> getAll();
+  Optional<Invoice> getById(int id) throws IOException;
 
-  void update(int id, Invoice updatedInvoice);
+  List<Invoice> getAll() throws IOException;
 
-  void delete(int id);
+  void update(int id, Invoice updatedInvoice) throws IOException;
+
+  void delete(int id) throws IOException;
 }
