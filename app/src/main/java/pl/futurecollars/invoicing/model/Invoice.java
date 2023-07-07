@@ -2,13 +2,9 @@ package pl.futurecollars.invoicing.model;
 
 import java.time.LocalDate;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Invoice {
 
   private int id;
@@ -16,5 +12,4 @@ public class Invoice {
   private Company seller;
   private Company buyer;
   private List<InvoiceEntry> entries;
-
 }
