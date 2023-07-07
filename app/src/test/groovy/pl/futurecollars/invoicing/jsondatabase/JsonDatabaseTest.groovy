@@ -18,7 +18,6 @@ class JsonDatabaseTest extends Specification{
     private static JsonDatabase jsonDatabase;
     private static File file;
     private static Vat vat;
-    private static GetActualId getActualId1;
 
     def setupSpec() {
         actualPath = new ActualPath();
