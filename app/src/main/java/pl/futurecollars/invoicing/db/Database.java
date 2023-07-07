@@ -6,6 +6,7 @@ import java.util.Optional;
 import pl.futurecollars.invoicing.model.Invoice;
 
 public interface Database {
+
   int save(Invoice invoice) throws IOException;
 
   Optional<Invoice> getById(int id) throws IOException;
