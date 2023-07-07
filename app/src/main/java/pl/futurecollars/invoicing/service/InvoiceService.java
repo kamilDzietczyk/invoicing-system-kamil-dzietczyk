@@ -14,6 +14,7 @@ public class InvoiceService {
     this.database = database;
   }
 
+
   public Optional<Invoice> getById(int id) throws IOException {
     return database.getById(id);
   }
@@ -30,7 +31,7 @@ public class InvoiceService {
     database.update(id, updatedInvoice);
   }
 
-  public void delete(int id) throws IOException {
+  public void delete(int id) throws IOException{
     database.delete(id);
   }
 }
