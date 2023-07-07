@@ -50,4 +50,17 @@ class AppTest extends Specification {
         vatValues[5].name() == "Vat_ZW"
         vatValues[5].rate == BigDecimal.valueOf(0)
     }
+
+    def "should print correct greeting"() {
+        given:
+        def outputStream = new ByteArrayOutputStream()
+        System.setOut(new PrintStream(outputStream))
+
+        when:
+        App.main(new String[0])
+
+        then:
+        String output = outputStream.toString().trim()
+        output == "Hello World!"
+    }
 }
