@@ -16,5 +16,4 @@ public class Invoice {
   private Company seller;
   private Company buyer;
   private List<InvoiceEntry> entries;
-
 }

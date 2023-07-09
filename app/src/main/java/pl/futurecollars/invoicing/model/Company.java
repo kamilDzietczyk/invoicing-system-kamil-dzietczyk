@@ -12,5 +12,4 @@ public class Company {
   private String taskIdentificationNumber;
   private String address;
   private String name;
-
 }

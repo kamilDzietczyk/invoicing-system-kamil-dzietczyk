@@ -7,6 +7,8 @@ import java.util.Optional;
 import org.springframework.stereotype.Repository;
 import pl.futurecollars.invoicing.db.Database;
 import pl.futurecollars.invoicing.model.Invoice;
+import pl.futurecollars.invoicing.db.Database;
+import pl.futurecollars.invoicing.model.Invoice;
 
 @Repository
 public class InMemoryDatabase implements Database {
