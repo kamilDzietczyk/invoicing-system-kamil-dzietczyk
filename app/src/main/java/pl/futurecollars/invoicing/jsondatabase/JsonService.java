@@ -15,19 +15,19 @@ public class JsonService {
     objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
   }
 
-  public String json(Object object) throws JsonProcessingException {
+  public String json(Object object) {
     try {
       return objectMapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
-      throw e;
+      throw new RuntimeException("failed convert");
     }
   }
 
-  public <T> T object(String json, Class<T> clazz) throws JsonProcessingException {
+  public <T> T object(String json, Class<T> clazz) {
     try {
       return objectMapper.readValue(json, clazz);
     } catch (JsonProcessingException e) {
-      throw e;
+      throw new RuntimeException("failed parse");
     }
   }
 }

@@ -5,89 +5,91 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import pl.futurecollars.invoicing.db.Database;
 import pl.futurecollars.invoicing.model.Invoice;
 
 public class JsonDatabase implements Database {
 
   private ActualPath actualPath = new ActualPath();
-  private GetActualId getActualId = new GetActualId();
   private FileService fileService = new FileService();
   private JsonService jsonService = new JsonService();
 
   @Override
-  public int save(Invoice invoice) throws IOException {
-    getActualId.updateId();
+  public int save(Invoice invoice) {
     try {
-      invoice.setId(getActualId.getId());
-      fileService.appendLineToFile(Path.of(actualPath.getIdPath("database")), jsonService.json(invoice));
-    } catch (IOException e) {
-      throw e;
+      fileService.updateId();
+      invoice.setId(fileService.getId());
+      fileService.appendLineToFile(Path.of(actualPath.getDatabasePath()), jsonService.json(invoice));
+    } catch (IOException ex) {
+      throw new RuntimeException("Database failed to save invoice", ex);
     }
-    return getActualId.getId();
+    return 0;
   }
 
   @Override
-  public Optional<Invoice> getById(int id) throws IOException {
-    List<String> invoices = fileService.readAllLines(Path.of(actualPath.getIdPath("database")));
-    for (String invoice : invoices) {
-      if (invoice.contains("\"id\":" + id + ",")) {
-        return Optional.of(jsonService.object(invoice, Invoice.class));
+  public Optional<Invoice> getById(int id) {
+    try {
+      return fileService.readAllLines(Path.of(actualPath.getDatabasePath()))
+          .stream()
+          .filter(line -> existsId(line, id))
+          .map(line -> jsonService.object(line, Invoice.class))
+          .findFirst();
+    } catch (IOException ex) {
+      throw new RuntimeException("Failed to get by id: " + id);
+    }
+  }
+
+  @Override
+  public List<Invoice> getAll() {
+    try {
+      return fileService.readAllLines(Path.of(actualPath.getDatabasePath()))
+          .stream()
+          .map(line -> jsonService.object(line, Invoice.class))
+          .collect(Collectors.toList());
+    } catch (IOException ex) {
+      throw new RuntimeException("Filed to get all invoice");
+    }
+  }
+
+  @Override
+  public void update(int id, Invoice updatedInvoice) {
+    try {
+      List<String> allLinesFromFile = fileService.readAllLines(Path.of(actualPath.getDatabasePath()));
+      List<String> tempList = allLinesFromFile
+          .stream()
+          .filter(line -> !existsId(line, id))
+          .collect(Collectors.toCollection(ArrayList::new));
+
+      if (allLinesFromFile.size() == tempList.size()) {
+        throw new RuntimeException("Failed to update invoice");
       }
-    }
-    throw new IllegalArgumentException("Nie znaleziono faktury o podanym ID: " + id);
-  }
 
-  @Override
-  public List<Invoice> getAll() throws IOException {
-    List<String> invoices = fileService.readAllLines(Path.of(actualPath.getIdPath("database")));
-    List<Invoice> returnInvoices = new ArrayList<>();
-    for (String invoice : invoices) {
-      returnInvoices.add(jsonService.object(invoice, Invoice.class));
-    }
-    return returnInvoices;
-  }
+      updatedInvoice.setId(id);
+      tempList.add(jsonService.json(updatedInvoice));
 
-  @Override
-  public void update(int id, Invoice updatedInvoice) throws IOException {
-    List<Invoice> invoices = getAll();
-    List<String> updateInvoices = new ArrayList<>();
-    Boolean ifExist = false;
-    for (Invoice invoice : invoices) {
-      if (invoice.getId() == id) {
-        ifExist = true;
-        invoice.setDate(updatedInvoice.getDate());
-        invoice.setBuyer(updatedInvoice.getBuyer());
-        invoice.setSeller(updatedInvoice.getSeller());
-        invoice.setEntries(updatedInvoice.getEntries());
-        updateInvoices.add(jsonService.json(invoice));
-      } else {
-        updateInvoices.add(jsonService.json(invoice));
-      }
-    }
-    if (ifExist) {
-      fileService.writeLinesToFile(Path.of(actualPath.getIdPath("database")), updateInvoices);
-    } else {
-      throw new IllegalArgumentException("Nie znaleziono faktury o podanym ID: " + id);
+      fileService.writeLinesToFile(Path.of(actualPath.getDatabasePath()), tempList);
+
+    } catch (IOException ex) {
+      throw new RuntimeException("Failed to update invoice");
     }
   }
 
   @Override
-  public void delete(int id) throws IOException {
-    List<Invoice> listOfInvoice = getAll();
-    List<String> deletedInvoices = new ArrayList<>();
-    Boolean ifExist = false;
-    for (Invoice invoice : listOfInvoice) {
-      if (invoice.getId() == id) {
-        ifExist = true;
-      } else {
-        deletedInvoices.add(jsonService.json(invoice));
-      }
+  public void delete(int id) {
+    try {
+      var tempList = fileService.readAllLines(Path.of(actualPath.getDatabasePath()))
+          .stream()
+          .filter(line -> !existsId(line, id))
+          .toList();
+      fileService.writeLinesToFile(Path.of(actualPath.getDatabasePath()), tempList);
+
+    } catch (IOException ex) {
+      throw new RuntimeException("Failed to delete invoice with id: " + id, ex);
     }
-    if (ifExist) {
-      fileService.writeLinesToFile(Path.of(actualPath.getIdPath("database")), deletedInvoices);
-    } else {
-      throw new IllegalArgumentException("Nie znaleziono faktury o podanym ID: " + id);
-    }
+  }
+
+  private boolean existsId(String line, int id) {
+    return line.contains("\"id\":" + id + ",");
   }
 }

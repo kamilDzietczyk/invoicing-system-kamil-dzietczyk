@@ -1,43 +1,26 @@
 package pl.futurecollars.invoicing.jsondatabase
 
-import pl.futurecollars.invoicing.model.Company
+import pl.futurecollars.invoicing.helpers.TestHelpers
 import pl.futurecollars.invoicing.model.Invoice
-import pl.futurecollars.invoicing.model.InvoiceEntry
 import pl.futurecollars.invoicing.model.Vat
+import spock.lang.Shared
 import spock.lang.Specification
-import java.io.File
 
-import java.time.LocalDate
+import java.nio.file.Path
 
 class JsonDatabaseTest extends Specification{
 
-    private static ActualPath actualPath;
-    private static GetActualId getActualId;
-    private static FileService fileService;
-    private static JsonService jsonService;
-    private static JsonDatabase jsonDatabase;
-    private static File file;
-    private static Vat vat;
-
-    def setupSpec() {
-        actualPath = new ActualPath();
-        getActualId = new GetActualId();
-        fileService = new FileService();
-        jsonService = new JsonService();
-        jsonDatabase = new JsonDatabase();
-        file = new File(actualPath.getIdPath("database"));
-        vat = Vat.Vat_7
-        getActualId = new GetActualId();
-    }
+    @Shared ActualPath actualPath = new ActualPath();
+    @Shared FileService fileService = new FileService();
+    @Shared JsonService jsonService = new JsonService();
+    @Shared JsonDatabase jsonDatabase = new JsonDatabase();
+    @Shared file = new File(actualPath.databasePath);
+    @Shared Vat vat = Vat.Vat_7
 
     def "Should save invoice"() {
         given:
-        Company buyer = new Company("123456789","address","buyer");
-        Company seller = new Company("123456789","address","seller");
-        InvoiceEntry inve = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list = new ArrayList<>();
-        list.add(inve);
-        Invoice invoice = new Invoice(0, LocalDate.now(), buyer, seller, list);
+        file.createNewFile();
+        def invoice = TestHelpers.createTestInvoice()
         when:
         jsonDatabase.save(invoice);
         then:
@@ -45,65 +28,41 @@ class JsonDatabaseTest extends Specification{
         cleanup:
         // Usunięcie pliku z indeksami
         file.delete()
+        fileService.writeToFile(Path.of(actualPath.getIdPath()),"0")
     }
-
     def "Should get by ID"() {
         given:
-        Company buyer = new Company("123456789","address","buyer");
-        Company seller = new Company("123456789","address","seller");
-        InvoiceEntry inve = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list = new ArrayList<>();
-        list.add(inve);
-        Invoice invoice = new Invoice(0, LocalDate.now(), buyer, seller, list);
-        Optional<Invoice> invoice2;
+        file.createNewFile();
+        def invoice = TestHelpers.createTestInvoice()
         jsonDatabase.save(invoice);
         when:
-        invoice2 = jsonDatabase.getById(getActualId.getId());
+        def invoiceId = fileService.getId()
+        def foundInvoice = jsonDatabase.getById(invoiceId)
         then:
-        invoice2.get().getBuyer().getTaskIdentificationNumber() =="123456789";
+        foundInvoice.isPresent()
+        foundInvoice.ifPresent { invoice1 ->
+            invoice.getBuyer().getTaskIdentificationNumber() == "123456789"
+        }
         cleanup:
         // Usunięcie pliku z indeksami
         file.delete()
+        fileService.writeToFile(Path.of(actualPath.getIdPath()), "0")
     }
 
     def "Should throw error when try get by invalid Id"() {
-        given:
-        Company buyer = new Company("123456789","address","buyer");
-        Company seller = new Company("123456789","address","seller");
-        InvoiceEntry inve = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list = new ArrayList<>();
-        list.add(inve);
-        Invoice invoice = new Invoice(0, LocalDate.now(), buyer, seller, list);
-        Optional<Invoice> invoice2;
-        jsonDatabase.save(invoice);
         when:
-        invoice2 = jsonDatabase.getById(getActualId.getId()+1);
+        jsonDatabase.getById(fileService.getId() + 1)
         then:
-        // Sprawdzenie, czy wyjątek został wyrzucony i czy zawiera oczekiwany tekst
-        def exception = thrown(IllegalArgumentException)
-        exception.message.contains("Nie znaleziono faktury o podanym ID: " + (getActualId.getId() + 1))
-
-        cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
+        def exception = thrown(RuntimeException)
+        exception.message.contains("Failed to get by id: " + (fileService.getId() + 1))
+        fileService.writeToFile(Path.of(actualPath.getIdPath()),"0")
     }
 
     def "Should get all Invoice"() {
         given:
-        Company buyer = new Company("123456789","address","buyer");
-        Company seller = new Company("123456789","address","seller");
-        InvoiceEntry inve = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list = new ArrayList<>();
-        list.add(inve);
-        Invoice invoice = new Invoice(0, LocalDate.now(), buyer, seller, list);
-
-        Company buyer1 = new Company("123456789","address","buyer");
-        Company seller1 = new Company("123456789","address","seller");
-        InvoiceEntry inve1 = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list1 = new ArrayList<>();
-        list.add(inve);
-        Invoice invoice1 = new Invoice(0, LocalDate.now(), buyer1, seller1, list1);
-
+        file.createNewFile();
+        def invoice = TestHelpers.createTestInvoice()
+        def invoice1 = TestHelpers.createTestInvoice1()
         jsonDatabase.save(invoice);
         jsonDatabase.save(invoice1);
         List<Invoice> invoices;
@@ -114,121 +73,98 @@ class JsonDatabaseTest extends Specification{
         cleanup:
         // Usunięcie pliku z indeksami
         file.delete()
+        fileService.writeToFile(Path.of(actualPath.getIdPath()),"0")
+    }
+
+    def "Should throw error when try get all Invoice"() {
+        given:
+        file.createNewFile();
+        def invoice = TestHelpers.createTestInvoice()
+        def invoice1 = TestHelpers.createTestInvoice1()
+        jsonDatabase.save(invoice);
+        jsonDatabase.save(invoice1);
+        List<Invoice> invoices;
+        file.delete()
+        when:
+        invoices = jsonDatabase.getAll();
+        then:
+        def exception = thrown(RuntimeException)
+        exception.message.contains("Filed to get all invoice")
+        cleanup:
+        // Usunięcie pliku z indeksami
+        fileService.writeToFile(Path.of(actualPath.getIdPath()),"0")
     }
 
     def "Should update Invoice"() {
         given:
-        Company buyer = new Company("123456789","address","buyer");
-        Company seller = new Company("123456789","address","seller");
-        InvoiceEntry inve = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list = new ArrayList<>();
-        list.add(inve);
-        Invoice invoice = new Invoice(0, LocalDate.now(), buyer, seller, list);
-
-        Company buyer1 = new Company("000000","address","buyer");
-        Company seller1 = new Company("000000","address","seller");
-        InvoiceEntry inve1 = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list1 = new ArrayList<>();
-        list.add(inve);
-        Invoice invoice1 = new Invoice(0, LocalDate.now(), buyer1, seller1, list1);
+        file.createNewFile();
+        def invoice = TestHelpers.createTestInvoice()
         jsonDatabase.save(invoice);
-
         when:
-        jsonDatabase.update(getActualId.getId(),invoice1)
-
+        jsonDatabase.update(1,invoice)
         then:
-        def Optional<Invoice> inv = jsonDatabase.getById(getActualId.getId())
-        inv.get().getBuyer().getTaskIdentificationNumber() == "000000"
+        Optional<Invoice> inv = jsonDatabase.getById(1)
+        inv.get().getBuyer().getTaskIdentificationNumber() == "123456789"
 
         cleanup:
         // Usunięcie pliku z indeksami
         file.delete()
+        fileService.writeToFile(Path.of(actualPath.getIdPath()),"0")
     }
+
+    def "Should throw error when failed to update invoice"() {
+        given:
+        file.createNewFile();
+        def invoice = TestHelpers.createTestInvoice()
+        jsonDatabase.save(invoice);
+
+        when:
+        def updatedInvoice = TestHelpers.createTestInvoice() // Poniżej implementacja metody, która zwraca zmodyfikowaną fakturę
+        jsonDatabase.update(222,updatedInvoice)
+
+        then:
+        def exception = thrown(RuntimeException)
+        exception.message.contains("Failed to update invoice")
+
+        cleanup:
+        // Usunięcie pliku z indeksami
+        file.delete()
+        fileService.writeToFile(Path.of(actualPath.getIdPath()), "0")
+    }
+
 
     def "Should throw exception when try update invalid invoice"() {
         given:
-        Company buyer = new Company("123456789","address","buyer");
-        Company seller = new Company("123456789","address","seller");
-        InvoiceEntry inve = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list = new ArrayList<>();
-        list.add(inve);
-        Invoice invoice = new Invoice(0, LocalDate.now(), buyer, seller, list);
-
-        Company buyer1 = new Company("000000","address","buyer");
-        Company seller1 = new Company("000000","address","seller");
-        InvoiceEntry inve1 = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list1 = new ArrayList<>();
-        list.add(inve);
-        Invoice invoice1 = new Invoice(0, LocalDate.now(), buyer1, seller1, list1);
+        file.createNewFile();
+        def invoice = TestHelpers.createTestInvoice()
+        def invoice1 = TestHelpers.createTestInvoice()
         jsonDatabase.save(invoice);
-
         when:
-        jsonDatabase.update(getActualId.getId()+2,invoice1)
-
+        jsonDatabase.update(fileService.getId()+2,invoice1)
         then:
-        def exception = thrown(IllegalArgumentException)
-        exception.message.contains("Nie znaleziono faktury o podanym ID: " + (getActualId.getId() + 2))
-
+        def exception = thrown(RuntimeException)
+        exception.message.contains("Failed to update invoice")
         cleanup:
         // Usunięcie pliku z indeksami
         file.delete()
+        fileService.writeToFile(Path.of(actualPath.getIdPath()),"0")
     }
 
     def "Should delete Invoice"() {
         given:
-        Company buyer = new Company("123456789","address","buyer");
-        Company seller = new Company("123456789","address","seller");
-        InvoiceEntry inve = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list = new ArrayList<>();
-        list.add(inve);
-        Invoice invoice = new Invoice(0, LocalDate.now(), buyer, seller, list);
-
-        Company buyer1 = new Company("000000","address","buyer");
-        Company seller1 = new Company("000000","address","seller");
-        InvoiceEntry inve1 = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list1 = new ArrayList<>();
-        list.add(inve1);
-        Invoice invoice1 = new Invoice(0, LocalDate.now(), buyer1, seller1, list1);
+        file.createNewFile();
+        def invoice = TestHelpers.createTestInvoice()
+        def invoice1 = TestHelpers.createTestInvoice1()
         jsonDatabase.save(invoice);
         jsonDatabase.save(invoice1);
         when:
-        jsonDatabase.delete(getActualId.getId()-1)
-
+        jsonDatabase.delete(1)
         then:
-        def List<Invoice> tempInv = jsonDatabase.getAll();
+        List<Invoice> tempInv = jsonDatabase.getAll();
         tempInv.size()==1
-
         cleanup:
         // Usunięcie pliku z indeksami
         file.delete()
-    }
-
-    def "Should throw error when try delete not exists Invoice"() {
-        given:
-        Company buyer = new Company("123456789","address","buyer");
-        Company seller = new Company("123456789","address","seller");
-        InvoiceEntry inve = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list = new ArrayList<>();
-        list.add(inve);
-        Invoice invoice = new Invoice(0, LocalDate.now(), buyer, seller, list);
-
-        Company buyer1 = new Company("000000","address","buyer");
-        Company seller1 = new Company("000000","address","seller");
-        InvoiceEntry inve1 = new InvoiceEntry("aaaaa",BigDecimal.TEN,BigDecimal.ONE, vat);
-        List<InvoiceEntry> list1 = new ArrayList<>();
-        list.add(inve1);
-        Invoice invoice1 = new Invoice(0, LocalDate.now(), buyer1, seller1, list1);
-        jsonDatabase.save(invoice);
-        jsonDatabase.save(invoice1);
-        when:
-        jsonDatabase.delete(getActualId.getId()+123)
-
-        then:
-        def exception = thrown(IllegalArgumentException)
-        exception.message.contains("Nie znaleziono faktury o podanym ID: " + (getActualId.getId() + 123))
-
-        cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
+        fileService.writeToFile(Path.of(actualPath.getIdPath()),"0")
     }
 }

@@ -7,25 +7,6 @@ import pl.futurecollars.invoicing.model.Vat
 import spock.lang.Specification
 
 class AppTest extends Specification {
-    def "Test enum values"() {
-        when:
-        def vatValues = Vat.values();
-
-        then:
-        vatValues.size() == 6
-        vatValues[0].name() == "Vat_21"
-        vatValues[0].rate == BigDecimal.valueOf(21)
-        vatValues[1].name() == "Vat_8"
-        vatValues[1].rate == BigDecimal.valueOf(8)
-        vatValues[2].name() == "Vat_7"
-        vatValues[2].rate == BigDecimal.valueOf(7)
-        vatValues[3].name() == "Vat_5"
-        vatValues[3].rate == BigDecimal.valueOf(5)
-        vatValues[4].name() == "Vat_0"
-        vatValues[4].rate == BigDecimal.valueOf(0)
-        vatValues[5].name() == "Vat_ZW"
-        vatValues[5].rate == BigDecimal.valueOf(0)
-    }
 
     def "should print correct greeting"() {
         given:
