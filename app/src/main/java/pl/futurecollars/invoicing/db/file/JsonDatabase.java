@@ -1,4 +1,4 @@
-package pl.futurecollars.invoicing.jsondatabase;
+package pl.futurecollars.invoicing.db.file;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -20,7 +20,7 @@ public class JsonDatabase implements Database {
     try {
       fileService.updateId();
       invoice.setId(fileService.getId());
-      fileService.appendLineToFile(Path.of(actualPath.getDatabasePath()), jsonService.json(invoice));
+      fileService.appendLineToFile(Path.of(ActualPath.databasePath), jsonService.convertToJson(invoice));
     } catch (IOException ex) {
       throw new RuntimeException("Database failed to save invoice", ex);
     }
@@ -30,10 +30,10 @@ public class JsonDatabase implements Database {
   @Override
   public Optional<Invoice> getById(int id) {
     try {
-      return fileService.readAllLines(Path.of(actualPath.getDatabasePath()))
+      return fileService.readAllLines(Path.of(ActualPath.databasePath))
           .stream()
           .filter(line -> existsId(line, id))
-          .map(line -> jsonService.object(line, Invoice.class))
+          .map(line -> jsonService.convertToObject(line, Invoice.class))
           .findFirst();
     } catch (IOException ex) {
       throw new RuntimeException("Failed to get by id: " + id);
@@ -43,9 +43,9 @@ public class JsonDatabase implements Database {
   @Override
   public List<Invoice> getAll() {
     try {
-      return fileService.readAllLines(Path.of(actualPath.getDatabasePath()))
+      return fileService.readAllLines(Path.of(ActualPath.databasePath))
           .stream()
-          .map(line -> jsonService.object(line, Invoice.class))
+          .map(line -> jsonService.convertToObject(line, Invoice.class))
           .collect(Collectors.toList());
     } catch (IOException ex) {
       throw new RuntimeException("Filed to get all invoice");
@@ -55,7 +55,7 @@ public class JsonDatabase implements Database {
   @Override
   public void update(int id, Invoice updatedInvoice) {
     try {
-      List<String> allLinesFromFile = fileService.readAllLines(Path.of(actualPath.getDatabasePath()));
+      List<String> allLinesFromFile = fileService.readAllLines(Path.of(ActualPath.databasePath));
       List<String> tempList = allLinesFromFile
           .stream()
           .filter(line -> !existsId(line, id))
@@ -66,9 +66,9 @@ public class JsonDatabase implements Database {
       }
 
       updatedInvoice.setId(id);
-      tempList.add(jsonService.json(updatedInvoice));
+      tempList.add(jsonService.convertToJson(updatedInvoice));
 
-      fileService.writeLinesToFile(Path.of(actualPath.getDatabasePath()), tempList);
+      fileService.writeLinesToFile(Path.of(ActualPath.databasePath), tempList);
 
     } catch (IOException ex) {
       throw new RuntimeException("Failed to update invoice");
@@ -78,11 +78,11 @@ public class JsonDatabase implements Database {
   @Override
   public void delete(int id) {
     try {
-      var tempList = fileService.readAllLines(Path.of(actualPath.getDatabasePath()))
+      var tempList = fileService.readAllLines(Path.of(ActualPath.databasePath))
           .stream()
           .filter(line -> !existsId(line, id))
           .toList();
-      fileService.writeLinesToFile(Path.of(actualPath.getDatabasePath()), tempList);
+      fileService.writeLinesToFile(Path.of(ActualPath.databasePath), tempList);
 
     } catch (IOException ex) {
       throw new RuntimeException("Failed to delete invoice with id: " + id, ex);

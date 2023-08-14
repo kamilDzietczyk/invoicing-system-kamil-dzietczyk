@@ -1,4 +1,4 @@
-package pl.futurecollars.invoicing.jsondatabase;
+package pl.futurecollars.invoicing.db.file;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,13 +27,13 @@ public class FileService {
   }
 
   public int getId() throws IOException {
-    List<String> actId = readAllLines(Path.of(act.getIdPath()));
+    List<String> actId = readAllLines(Path.of(ActualPath.idPath));
     return Integer.parseInt(actId.get(0));
   }
 
   public void updateId() throws IOException {
     int actIid = getId();
-    writeToFile(Path.of(act.getIdPath()), String.valueOf(actIid + 1));
+    writeToFile(Path.of(ActualPath.idPath), String.valueOf(actIid + 1));
   }
 
 }
