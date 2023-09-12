@@ -6,6 +6,7 @@ import java.util.List;
 import pl.futurecollars.invoicing.db.file.FileService;
 
 public class IdService {
+
   private final Path idFilePath;
   private final FileService filesService;
   private int nextId = 1;
