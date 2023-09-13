@@ -2,11 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [Task_*]
+    branches: [ 'task_[0-9]+\/.*', 'master' ]
   pull_request:
-    branches: [Task_*]
-
-  workflow_dispatch:
+    branches: [ 'task_[0-9]+\/.*', 'master' ]
 
 jobs:
   build:
