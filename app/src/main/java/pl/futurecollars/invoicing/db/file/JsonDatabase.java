@@ -6,21 +6,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 import pl.futurecollars.invoicing.db.Database;
 import pl.futurecollars.invoicing.model.Invoice;
+import pl.futurecollars.invoicing.service.IdService;
 
+@AllArgsConstructor
 public class JsonDatabase implements Database {
 
-  private ActualPath actualPath = new ActualPath();
-  private FileService fileService = new FileService();
-  private JsonService jsonService = new JsonService();
+  private final Path databasePath;
+  private final IdService idService;
+  private final FileService fileService;
+  private final JsonService jsonService;
 
   @Override
   public int save(Invoice invoice) {
     try {
-      fileService.updateId();
-      invoice.setId(fileService.getId());
-      fileService.appendLineToFile(Path.of(ActualPath.databasePath), jsonService.convertToJson(invoice));
+      invoice.setId(idService.getNextIdAndIncreament());
+      fileService.appendLineToFile(databasePath, jsonService.convertToJson(invoice));
     } catch (IOException ex) {
       throw new RuntimeException("Database failed to save invoice", ex);
     }
@@ -30,7 +33,7 @@ public class JsonDatabase implements Database {
   @Override
   public Optional<Invoice> getById(int id) {
     try {
-      return fileService.readAllLines(Path.of(ActualPath.databasePath))
+      return fileService.readAllLines(databasePath)
           .stream()
           .filter(line -> existsId(line, id))
           .map(line -> jsonService.convertToObject(line, Invoice.class))
@@ -43,7 +46,7 @@ public class JsonDatabase implements Database {
   @Override
   public List<Invoice> getAll() {
     try {
-      return fileService.readAllLines(Path.of(ActualPath.databasePath))
+      return fileService.readAllLines(databasePath)
           .stream()
           .map(line -> jsonService.convertToObject(line, Invoice.class))
           .collect(Collectors.toList());
@@ -55,7 +58,7 @@ public class JsonDatabase implements Database {
   @Override
   public void update(int id, Invoice updatedInvoice) {
     try {
-      List<String> allLinesFromFile = fileService.readAllLines(Path.of(ActualPath.databasePath));
+      List<String> allLinesFromFile = fileService.readAllLines(databasePath);
       List<String> tempList = allLinesFromFile
           .stream()
           .filter(line -> !existsId(line, id))
@@ -68,7 +71,7 @@ public class JsonDatabase implements Database {
       updatedInvoice.setId(id);
       tempList.add(jsonService.convertToJson(updatedInvoice));
 
-      fileService.writeLinesToFile(Path.of(ActualPath.databasePath), tempList);
+      fileService.writeLinesToFile(databasePath, tempList);
 
     } catch (IOException ex) {
       throw new RuntimeException("Failed to update invoice");
@@ -78,11 +81,11 @@ public class JsonDatabase implements Database {
   @Override
   public void delete(int id) {
     try {
-      var tempList = fileService.readAllLines(Path.of(ActualPath.databasePath))
+      var tempList = fileService.readAllLines(databasePath)
           .stream()
           .filter(line -> !existsId(line, id))
           .toList();
-      fileService.writeLinesToFile(Path.of(ActualPath.databasePath), tempList);
+      fileService.writeLinesToFile(databasePath, tempList);
 
     } catch (IOException ex) {
       throw new RuntimeException("Failed to delete invoice with id: " + id, ex);

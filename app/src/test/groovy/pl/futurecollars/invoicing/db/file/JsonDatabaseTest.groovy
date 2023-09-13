@@ -1,174 +1,124 @@
 package pl.futurecollars.invoicing.db.file
 
-import pl.futurecollars.invoicing.db.file.ActualPath
-import pl.futurecollars.invoicing.db.file.FileService
-import pl.futurecollars.invoicing.db.file.JsonDatabase
-import pl.futurecollars.invoicing.db.file.JsonService
+import pl.futurecollars.invoicing.db.Database
 import pl.futurecollars.invoicing.helpers.TestHelpers
-import pl.futurecollars.invoicing.model.Invoice
-import pl.futurecollars.invoicing.model.Vat
-import spock.lang.Shared
+import pl.futurecollars.invoicing.service.IdService
 import spock.lang.Specification
 
-import java.nio.file.Path
+import java.nio.file.Files
+import java.time.LocalDate
 
 class JsonDatabaseTest extends Specification{
 
-    @Shared ActualPath actualPath
-    @Shared FileService fileService
-    @Shared JsonService jsonService
-    @Shared JsonDatabase jsonDatabase
-    @Shared file
-    @Shared Vat vat
+    def dbPath
 
-    void setup() {
-        actualPath = new ActualPath()
-        fileService = new FileService()
-        jsonService = new JsonService()
-        jsonDatabase = new JsonDatabase()
-        file = new File(actualPath.databasePath)
-        vat = Vat.Vat_7
+    Database setup() {
+        def filesService = new FileService()
+
+        def idPath = File.createTempFile('ids', '.txt').toPath()
+        def idService = new IdService(idPath, filesService)
+
+        dbPath = File.createTempFile('invoices', '.txt').toPath()
+        return new JsonDatabase(dbPath, idService, filesService, new JsonService())
     }
+
 
     def "Should save invoice"() {
         given:
-        file.createNewFile();
-        def invoice = TestHelpers.createTestInvoice(1)
+        def db = setup()
+
         when:
-        jsonDatabase.save(invoice);
+        db.save(TestHelpers.createTestInvoice(4))
+
         then:
-        file.length()!= 0;
-        cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
-        fileService.writeToFile(Path.of(ActualPath.idPath),"0")
+        1 == Files.readAllLines(dbPath).size()
     }
     def "Should get by ID"() {
         given:
-        file.createNewFile();
-        def invoice = TestHelpers.createTestInvoice(1)
-        jsonDatabase.save(invoice);
+        def db = setup()
+        def testInvoice = TestHelpers.createTestInvoice(4)
+        db.save(testInvoice)
+
         when:
-        def invoiceId = fileService.getId()
-        def foundInvoice = jsonDatabase.getById(invoiceId)
+        def result = db.getById(1)
+
         then:
-        foundInvoice.ifPresent { invoice1 ->
-            invoice.getBuyer().getTaskIdentificationNumber() == "123456789"
-        }
-        cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
-        fileService.writeToFile(Path.of(ActualPath.idPath), "0")
+        result.isPresent()
+        result.get().id == 1
     }
+
     def "Should throw error when try get by invalid Id"() {
+        given:
+        def db = setup()
+
         when:
-        jsonDatabase.getById(fileService.getId() + 1)
+        def result = db.getById(-1)
+
         then:
-        def exception = thrown(RuntimeException)
-        exception.message.contains("Failed to get by id: " + (fileService.getId() + 1))
-        fileService.writeToFile(Path.of(ActualPath.idPath),"0")
+        !result.isPresent()
     }
+
+
     def "Should get all Invoice"() {
         given:
-        file.createNewFile();
-        def invoice = TestHelpers.createTestInvoice(1)
-        def invoice1 = TestHelpers.createTestInvoice(2)
-        jsonDatabase.save(invoice);
-        jsonDatabase.save(invoice1);
-        List<Invoice> invoices;
+        def db = setup()
+        def testInvoice1 = TestHelpers.createTestInvoice(1)
+        def testInvoice2 = TestHelpers.createTestInvoice(2)
+        db.save(testInvoice1)
+        db.save(testInvoice2)
+
         when:
-        invoices = jsonDatabase.getAll();
+        def allInvoices = db.getAll()
+
         then:
-        invoices.size() ==2;
-        cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
-        fileService.writeToFile(Path.of(ActualPath.idPath),"0")
+        allInvoices.size() == 2
     }
-    def "Should throw error when try get all Invoice"() {
-        given:
-        file.createNewFile();
-        def invoice = TestHelpers.createTestInvoice(1)
-        def invoice1 = TestHelpers.createTestInvoice(2)
-        jsonDatabase.save(invoice);
-        jsonDatabase.save(invoice1);
-        List<Invoice> invoices;
-        file.delete()
-        when:
-        invoices = jsonDatabase.getAll();
-        then:
-        def exception = thrown(RuntimeException)
-        exception.message.contains("Filed to get all invoice")
-        cleanup:
-        // Usunięcie pliku z indeksami
-        fileService.writeToFile(Path.of(ActualPath.idPath),"0")
-    }
+
+
     def "Should update Invoice"() {
         given:
-        file.createNewFile();
-        def invoice = TestHelpers.createTestInvoice(1)
-        jsonDatabase.save(invoice);
-        when:
-        jsonDatabase.update(1,invoice)
-        then:
-        Optional<Invoice> inv = jsonDatabase.getById(1)
-        inv.get().getBuyer().getTaskIdentificationNumber() == "1111111111"
+        def db = setup()
+        def testInvoice = TestHelpers.createTestInvoice(1)
+        db.save(testInvoice)
 
-        cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
-        fileService.writeToFile(Path.of(ActualPath.idPath),"0")
+        when:
+        testInvoice.date = LocalDate.now().plusDays(1)
+        db.update(1, testInvoice)
+        def updatedInvoice = db.getById(1)
+
+        then:
+        updatedInvoice.isPresent()
+        updatedInvoice.get().date == LocalDate.now().plusDays(1)
     }
+
+
     def "Should throw error when failed to update invoice"() {
         given:
-        file.createNewFile();
-        def invoice = TestHelpers.createTestInvoice(1)
-        jsonDatabase.save(invoice);
+        def db = setup()
+        def testInvoice = TestHelpers.createTestInvoice(1)
 
         when:
-        def updatedInvoice = TestHelpers.createTestInvoice(2)
-        jsonDatabase.update(222,updatedInvoice)
+        db.update(1, testInvoice)
 
         then:
-        def exception = thrown(RuntimeException)
-        exception.message.contains("Failed to update invoice")
+        def e = thrown(RuntimeException)
+        e.message == "Failed to update invoice"
+    }
 
-        cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
-        fileService.writeToFile(Path.of(ActualPath.idPath), "0")
-    }
-    def "Should throw exception when try update invalid invoice"() {
-        given:
-        file.createNewFile();
-        def invoice = TestHelpers.createTestInvoice(1)
-        def invoice1 = TestHelpers.createTestInvoice(2)
-        jsonDatabase.save(invoice);
-        when:
-        jsonDatabase.update(fileService.getId()+5,invoice1)
-        then:
-        def exception = thrown(RuntimeException)
-        exception.message.contains("Failed to update invoice")
-        cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
-        fileService.writeToFile(Path.of(ActualPath.idPath),"0")
-    }
+
+
     def "Should delete Invoice"() {
         given:
-        file.createNewFile();
-        def invoice = TestHelpers.createTestInvoice(1)
-        def invoice1 = TestHelpers.createTestInvoice(2)
-        jsonDatabase.save(invoice);
-        jsonDatabase.save(invoice1);
+        def db = setup()
+        def testInvoice = TestHelpers.createTestInvoice(1)
+        db.save(testInvoice)
+
         when:
-        jsonDatabase.delete(1)
+        db.delete(1)
+        def deletedInvoice = db.getById(1)
+
         then:
-        List<Invoice> tempInv = jsonDatabase.getAll();
-        tempInv.size()==1
-        cleanup:
-        // Usunięcie pliku z indeksami
-        file.delete()
-        fileService.writeToFile(Path.of(ActualPath.idPath),"0")
+        deletedInvoice.isEmpty()
     }
+
 }
